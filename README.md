@@ -46,6 +46,7 @@ docker run -d \
     -e CRON_SCHEDULE="0 0 * * *" \
     -e TZ=America/Los_Angeles \
     -e INPUT_FILE="ComingSoonTemplate.mp4" \
+    -e OUTPUT_FILE="MyFile.mp4" \
     -e FONT_FILE="times new roman.ttf" \
     -e ICAL_URL_RADARR="http://x.x.x.x:7878/feed/v3/calendar/Radarr.ics?apikey=******************" \
     -e ICAL_URL_SONARR="http://x.x.x.x:8989/feed/v3/calendar/Sonarr.ics?apikey=******************" \
@@ -75,6 +76,7 @@ docker run -d \
       - CRON_SCHEDULE=0 0 * * *
       - TZ=America/Los_Angeles
       - INPUT_FILE=ComingSoon.mp4
+      - OUTPUT_FILE=MyFile.mp4
       - ICAL_URL_RADARR=http://x.x.x.x:7878/feed/v3/calendar/Radarr.ics?apikey=********************
       - ICAL_URL_SONARR=http://x.x.x.x:8989/feed/v3/calendar/Sonarr.ics?apikey=********************
       - FONT_SIZE=70
@@ -102,7 +104,7 @@ docker run -d \
 | -e CRON_SCHEDULE            | (Required) The times you want the script to run.                                                                                                                                                                                                                                                                                                                  |
 | -e TZ                       | (Recommended) Sets the time zone for the logs and is essential for schedule accuracy.                                                                                                                                                                                                                                                                             |
 | -e INPUT_FILE               | (Required) The name of the template file the text will be overlaid on. This needs to be placed in the mounted config directory.                                                                                                                                                                                                                                   |
-| -e OUTPUT_FILE              | (Optional) The name of the output file created. If ommited it will use the default "ComingSoon.mp4"                                                                                                                                                                                                                                                               |
+| -e OUTPUT_FILE              | (Optional) The name of the output file created. If omitted it will use the default "ComingSoon.mp4"                                                                                                                                                                                                                                                               |
 | -e FONT_FILE                | (Optional) The name of the truetype font file. Must be a ttf file and placed in the mounted config directory. This parameter is optional and if ommited arial font will be used by default.                                                                                                                                                                       |
 | -e ICAL_URL_RADARR          | (Optional) This is the iCal link generated from Radarr (See above for example). Ommiting this variable will prevent Radarr from being used in the final list.                                                                                                                                                                                                     |
 | -e ICAL_URL_SONARR          | (Optional) This is the iCal link generated from Sonarr (See above for example). Ommiting this variable will prevent Sonarr from being used in the final list.                                                                                                                                                                                                     |
