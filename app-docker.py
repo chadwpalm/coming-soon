@@ -15,11 +15,12 @@ log_file = "/config/coming-soon.log"
 ffmpegLoc = "/coming-soon" # Location of ffmpeg binary
 textFile = "/config/upcoming.txt" # Location to save the intermediate text file
 inputFile = f"/config/{os.getenv("INPUT_FILE")}" # Input file. This is the video you want to use as the background.
-outputFile = "/output/ComingSoon.mp4" # This is the location where the final video is saved.
+outputDir = "/output" # This is the location where the final video is saved.
+outputFileName = f"{os.getenv("OUTPUT_FILE")}" # Output file. This is the name of the final output file.
 fontFileEnv = f"/config/{os.getenv('FONT_FILE', 'arial.ttf')}"
 fontFile = fontFileEnv if os.path.exists(fontFileEnv) else "/coming-soon/arial.ttf"
-iCalURL_radarr = os.getenv("ICAL_URL_RADARR") # This is the URL to retrieve Radarr ical file.
-iCalURL_sonarr = os.getenv("ICAL_URL_SONARR") # This is the URL to retrieve Sonarr ical file.
+iCalURL_radarr = os.getenv("ICAL_URL_RADARR", "") # This is the URL to retrieve Radarr ical file.
+iCalURL_sonarr = os.getenv("ICAL_URL_SONARR", "") # This is the URL to retrieve Sonarr ical file.
 
 # Here are the parameters for the text overlayed onto the video. The defaults are what works in my setup.
 # fontsize: fontsize in pixels
@@ -42,6 +43,8 @@ if centerText:
     x = "(w-text_w)/2"
     y = "(h-text_h)/2"
 
+outputFile = f"{outputDir}/{outputFileName}"
+
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] [%(levelname)s] %(message)s',
@@ -54,12 +57,24 @@ logging.basicConfig(
 # Fetching of ical file
 
 def fetch_ical_data(url_radarr, url_sonarr):
-    response_radarr = requests.get(url_radarr)
-    response_radarr.raise_for_status()
-    response_sonarr = requests.get(url_sonarr)
-    response_sonarr.raise_for_status()
-    logging.info("Fetched iCal data successfully")
-    return response_radarr.text,response_sonarr.text
+    def get_ical(url):
+        if not url or not str(url).strip():
+            return ""
+        url = str(url).strip()
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            return response.text
+        except:
+            return ""
+
+    radarr_text = get_ical(url_radarr)
+    sonarr_text = get_ical(url_sonarr)
+
+    if radarr_text or sonarr_text:
+        logging.info("Fetched iCal data successfully")
+
+    return radarr_text, sonarr_text
 
 # Checking if just a date and makes the object a datetime object for downsteam operations
 
@@ -96,12 +111,25 @@ def extract_episode(input_str):
 # Parsing of the ical file to create a filtered list of upcoming digital releases
 
 def ical_to_filtered_list(ical_data):
-    calendar_radarr = Calendar.from_ical(ical_data[0])
-    calendar_sonarr = Calendar.from_ical(ical_data[1])
     events = []
     today = datetime.now()
 
-    for component in calendar_radarr.walk():
+    def parse_calendar(ical_text, source_name):
+        if not ical_text or not ical_text.strip():
+            logging.info(f"No {source_name} iCal data – skipping.")
+            return []
+        try:
+            cal = Calendar.from_ical(ical_text)
+            return list(cal.walk())
+        except Exception as e:
+            logging.error(f"Failed to parse {source_name} iCal: {e}")
+            return []
+
+    radarr_components = parse_calendar(ical_data[0], "Radarr")
+    sonarr_components = parse_calendar(ical_data[1], "Sonarr")
+
+
+    for component in radarr_components:
         if component.name == "VEVENT":
             dtstart = normalize_dt(component.get('dtstart').dt)
             print (dtstart)
@@ -116,7 +144,7 @@ def ical_to_filtered_list(ical_data):
                 else:
                     logging.info("Not a digital release")
 
-    for component in calendar_sonarr.walk():
+    for component in sonarr_components:
         if component.name == "VEVENT":
             dtstart = normalize_dt(component.get('dtstart').dt)
             if dtstart > today:
